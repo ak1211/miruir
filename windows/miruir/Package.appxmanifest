@@ -7,11 +7,11 @@
   IgnorableNamespaces="uap mp">
 
  <Identity
-    Name="b0088f12-e40d-41c0-8994-5dba4d7f6d92"
+    Name="ee955775-e9aa-4b25-b9be-41544670ca5b"
     Publisher="CN=aki"
-    Version="0.0.3.0" />
+    Version="0.1.2.0" />
 
-  <mp:PhoneIdentity PhoneProductId="b0088f12-e40d-41c0-8994-5dba4d7f6d92" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="ee955775-e9aa-4b25-b9be-41544670ca5b" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>miruir</DisplayName>
@@ -37,7 +37,7 @@
         Square44x44Logo="Assets\Square44x44Logo.png"
         Description="miruir"
         BackgroundColor="transparent">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"/>
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" Square71x71Logo="Assets\SmallTile.png" Square310x310Logo="Assets\LargeTile.png"/>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
     </Application>

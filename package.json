@@ -12,7 +12,10 @@
   "dependencies": {
     "react": "16.9.0",
     "react-native": "0.61.5",
-    "react-native-windows": "^0.61.0-0"
+    "react-native-elements": "^2.0.2",
+    "react-native-vector-icons": "^6.6.0",
+    "react-native-windows": "0.61.12",
+    "rnpm-plugin-windows": "^0.6.1"
   },
   "devDependencies": {
     "@babel/core": "^7.6.2",
