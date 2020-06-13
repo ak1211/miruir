@@ -2,6 +2,8 @@
 PiHVAC https://github.com/ak1211/pi_hvac/
 のリモコン信号解析エンジンのみを取り出してUIをReact Native WindowsにしてVisual StudioでUWPアプリにしたもの。
 
+使い方は https://ak1211.com/7586 を見てください。
+
 # UWPアプリ
 releaseタブのv0.1 Assets/miruir_0.1.2.0_x86_x64_arm.appxbundle
 開発者モードのWindowsでインストール。
