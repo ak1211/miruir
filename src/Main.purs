@@ -16,11 +16,12 @@
 -}
 module Main (app) where
 
+import Data.Array ((:))
 import Data.Array as Array
 import Data.Maybe (Maybe(..), fromMaybe)
 import InfraredCodeView (view) as IR
 import Prelude
-import React.Basic (Component, JSX, createComponent, make)
+import React.Basic (Component, JSX, Self, createComponent, make)
 import React.Basic (fragment) as React
 import React.Basic.Events (EventFn)
 import React.Basic.Native (TextInputChangeEventData, button, scrollView_, string, text, textInput, view) as RN
@@ -40,6 +41,10 @@ type Props
   = Unit
 
 -- |
+type State
+  = { text :: Maybe String }
+
+-- |
 mainView :: Props -> JSX
 mainView =
   make component
@@ -48,31 +53,37 @@ mainView =
         }
     , render:
         \self ->
-          React.fragment
-            $ Array.concat
-                [ [ RN.text
-                      { style: titleText
-                      , children: [ RN.string ("Edit codes") ]
-                      }
-                  , RN.view
-                      { style: buttonArea
-                      , children: [ RN.button { onPress: onPressReset self, title: "Reset" } ]
-                      }
-                  , RN.textInput
-                      { style: ircodeArea
-                      , multiline: true
-                      , numberOfLines: 5.0
-                      , placeholder: "Write an on-off pair count (32-bit little endianness) hexadecimal number or json made with 'pigpio irrp.py' file."
-                      , onChange: onChangeTextInput self
-                      , value: fromMaybe "" self.state.text
-                      }
-                  ]
-                , case self.state.text of
-                    Just text -> [ IR.view text ]
-                    Nothing -> []
-                ]
+          let
+            partial = heading : contents self
+          in
+            case self.state.text of
+              Nothing -> React.fragment partial
+              Just text -> React.fragment (partial `Array.snoc` IR.view text)
     }
   where
+  heading :: JSX
+  heading =
+    RN.text
+      { style: titleText
+      , children: [ RN.string ("Edit codes") ]
+      }
+
+  contents :: Self Props State -> Array JSX
+  contents self =
+    [ RN.view
+        { style: buttonArea
+        , children: [ RN.button { onPress: onPressReset self, title: "Reset" } ]
+        }
+    , RN.textInput
+        { style: ircodeArea
+        , multiline: true
+        , numberOfLines: 5.0
+        , placeholder: "Write an on-off pair count (32-bit little endianness) hexadecimal number or json made with 'pigpio irrp.py' file."
+        , onChange: onChangeTextInput self
+        , value: fromMaybe "" self.state.text
+        }
+    ]
+
   onPressReset self = do
     let
       eventFn1 = RNE.nativeEvent

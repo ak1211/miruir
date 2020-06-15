@@ -95,29 +95,30 @@ binariesView baseband =
 
 -- |
 timingTableView :: Baseband -> JSX
-timingTableView (Baseband pulses) =
-  let
-    heading =
-      RN.view_
-        [ RN.text
-            { style: titleText
-            , children: [ RN.string ("Timing table in milliseconds") ]
-            }
-        ]
-  in
-    RN.view
-      { style: css {}
-      , children:
-          [ heading
-          , RN.flatList
-              { data: mapWithIndex col pulses
-              , renderItem: FUI.renderListItem
-              , numColumns: 4.0
-              , contentContainerStyle: css {}
-              }
-          ]
-      }
+timingTableView bb =
+  RN.view
+    { style: css {}
+    , children: [ heading, content bb ]
+    }
   where
+  heading :: JSX
+  heading =
+    RN.view_
+      [ RN.text
+          { style: titleText
+          , children: [ RN.string ("Timing table in milliseconds") ]
+          }
+      ]
+
+  content :: Baseband -> JSX
+  content (Baseband pulses) =
+    RN.flatList
+      { data: mapWithIndex col pulses
+      , renderItem: FUI.renderListItem
+      , numColumns: 4.0
+      , contentContainerStyle: css {}
+      }
+
   strMillisec :: Count -> String
   strMillisec n =
     either (const "N/A") identity
@@ -134,28 +135,26 @@ timingTableView (Baseband pulses) =
 
 -- |
 bitPatternsView :: Either ProcessError (Array (Tuple InfraredLeader (Array Bit))) -> JSX
-bitPatternsView bs =
-  let
-    heading =
-      RN.view_
-        [ RN.text
-            { style: titleText
-            , children: [ RN.string "Bit patterns" ]
-            }
-        ]
+bitPatternsView bitpatterns =
+  RN.view
+    { style: css {}
+    , children: heading : either errContents contents bitpatterns
+    }
+  where
+  heading :: JSX
+  heading =
+    RN.view_
+      [ RN.text
+          { style: titleText
+          , children: [ RN.string "Bit patterns" ]
+          }
+      ]
 
-    error msg = [ RN.view_ [ RN.text_ [ RN.string msg ] ] ]
-  in
-    RN.view
-      { style: css {}
-      , children:
-          Array.concat
-            [ [ heading ]
-            , either error
-                (intercalate [ hline ] <<< map infraredBitpatterns)
-                bs
-            ]
-      }
+  contents :: Array (Tuple InfraredLeader (Array Bit)) -> Array JSX
+  contents = intercalate [ hline ] <<< map infraredBitpatterns
+
+  errContents :: String -> Array JSX
+  errContents msg = [ RN.view_ [ RN.text_ [ RN.string msg ] ] ]
 
 -- |
 infraredBitpatterns :: Tuple InfraredLeader (Array Bit) -> Array JSX
@@ -199,52 +198,48 @@ infraredBitpatterns (Tuple leader vs) = case leader of
 -- |
 infraredRemoteControlFramesView :: Either ProcessError (Array InfraredCodeFrame) -> JSX
 infraredRemoteControlFramesView irframes =
-  let
-    heading =
-      RN.view_
-        [ RN.text
-            { style: titleText
-            , children: [ RN.string "Infrared remote control frames" ]
-            }
-        ]
+  RN.view
+    { style: css {}
+    , children: heading : either errContents contents irframes
+    }
+  where
+  heading :: JSX
+  heading =
+    RN.view_
+      [ RN.text
+          { style: titleText
+          , children: [ RN.string "Infrared remote control frames" ]
+          }
+      ]
 
-    error msg = [ RN.view_ [ RN.text_ [ RN.string msg ] ] ]
-  in
-    RN.view
-      { style: css {}
-      , children:
-          Array.concat
-            [ [ heading ]
-            , either error
-                (intercalate [ hline ] <<< map infraredCodeFrame)
-                irframes
-            ]
-      }
+  contents :: Array InfraredCodeFrame -> Array JSX
+  contents = intercalate [ hline ] <<< map infraredCodeFrame
+
+  errContents :: String -> Array JSX
+  errContents msg = [ RN.view_ [ RN.text_ [ RN.string msg ] ] ]
 
 -- |
 infraredRemoteControlCodeView :: Either ProcessError (NonEmptyArray IrRemoteControlCode) -> JSX
 infraredRemoteControlCodeView irRemoteCodes =
-  let
-    heading =
-      RN.view_
-        [ RN.text
-            { style: titleText
-            , children: [ RN.string "Infrared remote control code" ]
-            }
-        ]
+  RN.view
+    { style: css {}
+    , children: heading : either errContents contents irRemoteCodes
+    }
+  where
+  heading :: JSX
+  heading =
+    RN.view_
+      [ RN.text
+          { style: titleText
+          , children: [ RN.string "Infrared remote control code" ]
+          }
+      ]
 
-    error msg = [ RN.view_ [ RN.text_ [ RN.string msg ] ] ]
-  in
-    RN.view
-      { style: css {}
-      , children:
-          Array.concat
-            [ [ heading ]
-            , either error
-                (intercalate [ hline ] <<< map infraredRemoteControlCode)
-                irRemoteCodes
-            ]
-      }
+  contents :: NonEmptyArray IrRemoteControlCode -> Array JSX
+  contents = intercalate [ hline ] <<< map infraredRemoteControlCode
+
+  errContents :: String -> Array JSX
+  errContents msg = [ RN.view_ [ RN.text_ [ RN.string msg ] ] ]
 
 -- |
 infraredCodeFrame :: InfraredCodeFrame -> Array JSX
