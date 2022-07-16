@@ -140,9 +140,22 @@ const IrBitStream = (props: Props): JSX.Element => {
             optionType='button'
             buttonStyle='solid'
           >
-            <Radio value={0}>Least Significant Bit (LSB) first</Radio>
-            <Radio value={1}>Most Significant Bit (MSB) first</Radio>
+            <Radio value={0}>LSBit first</Radio>
+            <Radio value={1}>MSBit first</Radio>
           </Radio.Group>
+        </Paragraph>
+        <Paragraph>
+          {(state.msb_first) ?
+            <Text>Most Significant Bit (MSB) first<br />
+              上位ビット(オクテットのBit7 = 2の7乗 = 128)を先頭に送信されたビット列として解析する。<br />
+              先着順で 128, 64, 32, 16, 8, 4, 2, 1の重みづけに対応する。
+            </Text>
+            :
+            <Text>Least Significant Bit (LSB) first<br />
+              下位ビット(オクテットのBit0 = 2の0乗 = 1)を先頭に送信されたビット列として解析する。<br />
+              先着順で 1, 2, 4, 8, 16, 32, 64, 128の重みづけに対応する。
+            </Text>
+          }
         </Paragraph>
         {state.ir_frames.map((item, index) =>
           <InfraredRemoteFrame key={index} msb_first={state.msb_first === 1} index={index} frame={item} />

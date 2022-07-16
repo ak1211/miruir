@@ -40,13 +40,16 @@ fn parse_infrared_code(ircode: &str) -> Result<Vec<MarkAndSpaceMicros>, String> 
         x.iter().map(|x| MarkAndSpaceMicros::from(*x)).collect()
     }
 
-    from_infrared_code(ircode).map(convert)
+    let a = from_infrared_code(ircode).map(convert);
+    if a.is_err() {
+        from_array(ircode)
+    } else {
+        a
+    }
 }
 
 #[tauri::command]
-fn decode(
-    input: Vec<MarkAndSpaceMicros>,
-) -> Result<Vec<InfraredRemoteDemodulatedFrame>, String> {
+fn decode(input: Vec<MarkAndSpaceMicros>) -> Result<Vec<InfraredRemoteDemodulatedFrame>, String> {
     let frames = decode_phase1(&input)?;
     Ok(frames
         .iter()

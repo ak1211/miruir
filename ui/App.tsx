@@ -3,7 +3,7 @@
 // See LICENSE file in the project root for full license information.
 //
 import { useState } from 'react';
-import { Button, Card, Divider, Input, Alert, Typography, Space, Table } from 'antd';
+import { Button, Card, Divider, Input, Alert, Typography, Space, Table, message } from 'antd';
 import 'antd/dist/antd.min.css';
 import { Line, Datum } from '@ant-design/charts';
 import { invoke } from '@tauri-apps/api/tauri'
@@ -143,6 +143,12 @@ const App = (): JSX.Element => {
     setIRCode([])
   }
 
+  const handleConvert = () => {
+    let newText = "{" + ircode.map(item => item.mark + "," + item.space) + "}"
+    setState({ ...state, text: newText })
+    message.info('succsessful converting')
+  }
+
   const handleParse = (text: string) => {
     setState({ ...state, text: text })
     invoke<RxIrRemoteCode>("parse_infrared_code", { ircode: text })
@@ -155,7 +161,8 @@ const App = (): JSX.Element => {
   return (
     <Space direction="vertical" size="middle" style={{ display: 'flex' }}>
       <Card size="small" title={<Title level={4}>解析する赤外線リモコン信号</Title>}>
-        <Button type="primary" style={{ marginBottom: 3 }} onClick={handleReset}>Reset</Button>
+        <Button type="primary" style={{ margin: 3 }} onClick={handleReset}>Reset</Button>
+        <Button type="default" style={{ margin: 3 }} onClick={handleConvert}>変換</Button>
         <TextArea
           rows={6}
           placeholder="ここに解析対象の赤外線リモコンコードを入れる。"
