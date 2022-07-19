@@ -7,7 +7,7 @@ import './IrBitStream.css'
 import { Statistic, Empty, Alert, Card, Divider, Radio, Space, Typography, Descriptions } from 'antd'
 import 'antd/dist/antd.min.css'
 import { invoke } from '@tauri-apps/api/tauri'
-import { RxIrRemoteCode, InfraredRemoteDemodulatedFrame } from './index'
+import { RxTxIrRemoteCode, RxIrRemoteCode, InfraredRemoteDemodulatedFrame } from './index'
 
 const { Title, Text, Paragraph } = Typography
 
@@ -54,8 +54,8 @@ const InfraredRemoteFrame = (props: {
           .padStart(2, '0')
         let offset = 8 * index
         return (
-          <Descriptions.Item label={"offset " + offset} style={{ textAlign: "center" }}>
-            <Text> {octets.join('')}</Text>
+          <Descriptions.Item key={offset} label={"offset " + offset} style={{ textAlign: "center" }}>
+            <Text>{octets.join('')}</Text>
             <Statistic title="hex" value={value} />
           </Descriptions.Item >
         )
@@ -67,10 +67,10 @@ const InfraredRemoteFrame = (props: {
       layout="vertical"
       column={{ xxl: 14, xl: 12, lg: 8, md: 6, sm: 2, xs: 1 }}
       bordered>
-      <Descriptions.Item key={bitstream.join("")} label={"Bitstream " + bitstream.length + " bits"} span={20}>
+      <Descriptions.Item key={bitstream.join("")} label={"Bitstream " + bitstream.length + " bits"} span={14}>
         <Text>{bitstream.join('')}</Text>
       </Descriptions.Item>
-      <Descriptions.Item label="Protocol" span={1}>
+      <Descriptions.Item key={protocol} label="Protocol">
         <Statistic value={protocol} />
       </Descriptions.Item>
       {descriptions_item}
@@ -79,7 +79,7 @@ const InfraredRemoteFrame = (props: {
 }
 
 type Props = {
-  rx_ircode: RxIrRemoteCode,
+  rx_tx_ircode: RxTxIrRemoteCode,
 }
 
 type State = {
@@ -92,7 +92,7 @@ type State = {
 };
 
 const initState: State = {
-  msb_first: 1,
+  msb_first: 0,
   ir_frames: [],
   alert: {
     type: 'info',
@@ -118,13 +118,21 @@ const IrBitStream = (props: Props): JSX.Element => {
 
   useEffect(
     () => {
-      if (props.rx_ircode.length) {
-        decode(props.rx_ircode)
+      setState(initState)
+      if ("RxIrRemoteCode" in props.rx_tx_ircode) {
+        if (props.rx_tx_ircode.RxIrRemoteCode.length) {
+          decode(props.rx_tx_ircode.RxIrRemoteCode)
+        }
+      } else if ("TxIrRemoteCode" in props.rx_tx_ircode) {
+        setState({
+          ...state,
+          ir_frames: props.rx_tx_ircode.TxIrRemoteCode,
+        })
       } else {
-        setState(state => ({ ...state, ir_frames: [] }))
+        throw new Error('unimplemented')
       }
     }
-    , [props.rx_ircode])
+    , [props.rx_tx_ircode])
 
   //
 

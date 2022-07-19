@@ -1,7 +1,3 @@
-// Copyright (c) 2022 Akihiro Yamamoto.
-// Licensed under the MIT License <https://spdx.org/licenses/MIT.html>
-// See LICENSE file in the project root for full license information.
-//
 use serde::{Deserialize, Serialize};
 use std::convert;
 use std::fmt;
@@ -125,6 +121,13 @@ impl ops::Sub for Microseconds {
     }
 }
 
+impl Default for Microseconds {
+    /// なにも指定されなかったら場合にとりあえず入れる値
+    fn default() -> Self {
+        Self(30000)
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 /// 赤外線リモコン信号のキャリア周波数カウンタ型
 pub struct IrCarrierCounter(pub u16);
@@ -166,6 +169,13 @@ impl ops::Sub for IrCarrierCounter {
 impl fmt::Display for IrCarrierCounter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
+    }
+}
+
+impl Default for IrCarrierCounter {
+    /// なにも指定されなかったら場合にとりあえず入れる値
+    fn default() -> Self {
+        Self(0x2c88)
     }
 }
 
@@ -737,7 +747,9 @@ pub fn encode_phase1(
             // リーダーパルスを復元する
             Ok(InfraredRemoteFrame([vec![leader], trailer].concat()))
         }
-        InfraredRemoteDemodulatedFrame::Unknown(_) => Err("encode_phase1: 不明プロトコルでは変調できません。".to_string()),
+        InfraredRemoteDemodulatedFrame::Unknown(_) => {
+            Err("encode_phase1: 不明プロトコルでは変調できません。".to_string())
+        }
     }
 }
 

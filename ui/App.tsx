@@ -3,11 +3,11 @@
 // See LICENSE file in the project root for full license information.
 //
 import { useState } from 'react';
-import { Button, Card, Divider, Input, Alert, Typography, Space, Table, message } from 'antd';
+import { Modal, Button, Card, Divider, Input, Alert, Typography, Space, Table, message } from 'antd';
 import 'antd/dist/antd.min.css';
 import { Line, Datum } from '@ant-design/charts';
 import { invoke } from '@tauri-apps/api/tauri'
-import { RxIrRemoteCode, MarkAndSpace } from './index';
+import { RxIrRemoteCode, TxIrRemoteCode, RxTxIrRemoteCode, MarkAndSpace, convert_to_RxIrRemoteCode, convert_to_TxIrRemoteCode } from './index';
 import IrBitStream from './IrBitStream';
 import './App.css';
 
@@ -18,14 +18,15 @@ const { Text, Title } = Typography;
 const InfraredRemoteSignal = (props: { rx_ircode: RxIrRemoteCode }): JSX.Element => {
   let mark_and_spaces: MarkAndSpace[] = props.rx_ircode;
 
-  type DatumForList = { sn: number, t: number, kinds: string, duration: number }
+  type DatumForList = { key: any, sn: number, t: number, kinds: string, duration: number }
   const convert_for_list = (input: MarkAndSpace[]): DatumForList[] => {
     var acc: number = 0;
     var output: DatumForList[] = [];
     input.forEach((item, index) => {
-      output.push({ sn: 1 + 2 * index, t: acc, kinds: "Mark", duration: item.mark });
+      let sequence_number = 1 + 2 * index;
+      output.push({ key: sequence_number, sn: sequence_number, t: acc, kinds: "Mark", duration: item.mark });
       acc += item.mark;
-      output.push({ sn: 2 + 2 * index, t: acc, kinds: "Space", duration: item.space });
+      output.push({ key: sequence_number + 1, sn: sequence_number + 1, t: acc, kinds: "Space", duration: item.space });
       acc += item.space;
     })
     return output
@@ -136,24 +137,36 @@ const initState: State = {
 //
 const App = (): JSX.Element => {
   const [state, setState] = useState<State>(initState)
-  const [ircode, setIRCode] = useState<RxIrRemoteCode>([])
+  const [rx_tx_ircode, setRxTxIrCode] = useState<RxTxIrRemoteCode>({ RxIrRemoteCode: [] })
 
   const handleReset = () => {
     setState(initState)
-    setIRCode([])
+    setRxTxIrCode({ RxIrRemoteCode: [] })
   }
 
   const handleConvert = () => {
-    let newText = "{" + ircode.map(item => item.mark + "," + item.space) + "}"
-    setState({ ...state, text: newText })
-    message.info('succsessful converting')
+    if ("RxIrRemoteCode" in rx_tx_ircode) {
+      let new_text = "{" + rx_tx_ircode.RxIrRemoteCode.map(item => item.mark + "," + item.space) + "}"
+      setState({ ...state, text: new_text })
+      message.info('表現を変換しました。')
+    } else if ("TxIrRemoteCode" in rx_tx_ircode) {
+      var new_text = ""
+      var msg = '表現を変換しました。'
+      invoke<string>("encode", { input: rx_tx_ircode })
+        .then(x => { new_text = x })
+        .catch(err => msg = "変換に失敗しました。：" + err)
+      setState({ ...state, text: new_text })
+      message.info(msg)
+    } else {
+      throw new Error('unimplemented')
+    }
   }
 
   const handleParse = (text: string) => {
     setState({ ...state, text: text })
     invoke<RxIrRemoteCode>("parse_infrared_code", { ircode: text })
       .then((rx) => {
-        setIRCode(rx)
+        setRxTxIrCode({ RxIrRemoteCode: rx })
         setState(state => ({ ...state, alert: { type: "success", message: "いいですね。" } }))
       }).catch(err => setState(state => ({ ...state, alert: { type: 'error', message: err } })))
   }
@@ -171,8 +184,8 @@ const App = (): JSX.Element => {
         />
         <Alert message={state.alert.message} type={state.alert.type} showIcon />
       </Card>
-      <InfraredRemoteSignal rx_ircode={ircode} />
-      <IrBitStream rx_ircode={ircode} />
+      <InfraredRemoteSignal rx_ircode={convert_to_RxIrRemoteCode(rx_tx_ircode)} />
+      <IrBitStream rx_tx_ircode={rx_tx_ircode} />
     </Space>
   );
 }

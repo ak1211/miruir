@@ -3,10 +3,10 @@ use crate::infrared_remote::{
 };
 use nom::{
     bytes::complete::{take_while, take_while_m_n},
-    character::complete::{char, multispace0},
-    combinator::{map_res, opt},
-    multi::many1,
-    sequence::{delimited, tuple},
+    character::complete::{char, multispace0, space0},
+    combinator::{map_res},
+    multi::{many1, separated_list1},
+    sequence::{delimited, preceded, terminated, tuple},
     Finish, IResult,
 };
 use std::str::FromStr;
@@ -113,29 +113,57 @@ fn take_microseconds(input: &str) -> IResult<&str, Microseconds> {
     })(input)
 }
 
-// マークアンドスペース
-fn take_mark_and_space_micros(input: &str) -> IResult<&str, MarkAndSpaceMicros> {
-    let (input, mark) = delimited(multispace0, take_microseconds, multispace0)(input)?;
-    let (input, _) = char(',')(input)?;
-    let (input, space) = delimited(multispace0, take_microseconds, multispace0)(input)?;
-    let (input, _) = opt(char(','))(input)?;
-    let (input, _) = multispace0(input)?;
-
-    Ok((input, MarkAndSpaceMicros { mark, space }))
-}
-
 // 入力文字列を解析してマークアンドスペースのベクタにする
 pub fn from_array(input: &str) -> Result<Vec<MarkAndSpaceMicros>, String> {
     let mut parse = {
-        delimited(char('{'), many1(take_mark_and_space_micros), char('}'))};
+        delimited(
+            terminated(char('{'), space0),
+            separated_list1(delimited(space0, char(','), space0), take_microseconds),
+            preceded(space0, char('}')),
+        )
+    };
     match parse(input).finish() {
-        Ok((_, res)) => Ok(res),
+        Ok((_, mss)) => {
+            // Microsecods配列を2つづつペアにする
+            let pairs = itertools::unfold(mss.into_iter(), move |xs| match xs.len() {
+                0 => None,
+                1 => {
+                    let fst: Microseconds = xs.next().unwrap();
+                    Some((fst, None))
+                }
+                _ => {
+                    let fst: Microseconds = xs.next().unwrap();
+                    let snd: Option<Microseconds> = xs.next();
+                    Some((fst, snd))
+                }
+            })
+            .collect::<Vec<(Microseconds, Option<Microseconds>)>>();
+            // Spaceが無い時はとりあえずなんか入れておく
+            Ok(pairs
+                .iter()
+                .map(|(m, opt)| MarkAndSpaceMicros {
+                    mark: *m,
+                    space: opt.unwrap_or_default(),
+                })
+                .collect())
+        }
         Err(e) => Err(e.to_string()),
     }
 }
 
 #[test]
 fn test1_from_array() {
+    assert_eq!(
+        from_array("{1}"),
+        Ok(vec!(MarkAndSpaceMicros {
+            mark: Microseconds(1),
+            space: Microseconds::default(),
+        }))
+    );
+}
+
+#[test]
+fn test2_from_array() {
     assert_eq!(
         from_array("{1,2}"),
         Ok(vec!(MarkAndSpaceMicros {
@@ -146,9 +174,9 @@ fn test1_from_array() {
 }
 
 #[test]
-fn test2_from_array() {
+fn test3_from_array() {
     assert_eq!(
-        from_array("{1,2,}"),
+        from_array("{ 1, 2 }"),
         Ok(vec!(MarkAndSpaceMicros {
             mark: Microseconds(1),
             space: Microseconds(2)
@@ -157,7 +185,24 @@ fn test2_from_array() {
 }
 
 #[test]
-fn test3_from_array() {
+fn test4_from_array() {
+    assert_eq!(
+        from_array("{1,2,3}"),
+        Ok(vec!(
+            MarkAndSpaceMicros {
+                mark: Microseconds(1),
+                space: Microseconds(2)
+            },
+            MarkAndSpaceMicros {
+                mark: Microseconds(3),
+                space: Microseconds::default(),
+            }
+        ))
+    );
+}
+
+#[test]
+fn test5_from_array() {
     assert_eq!(
         from_array("{  1 , 2 , 3 , 4 }"),
         Ok(vec!(
